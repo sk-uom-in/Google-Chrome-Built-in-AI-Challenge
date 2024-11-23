@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "Research Translator",
+    "version": "1.0",
+    "description": "Translation tool for research",
+    "permissions": [
+      "activeTab",
+      "scripting",
+      "tabs",
+      "storage"
+    ],
+    "host_permissions": [
+      "https://translation.googleapis.com/*",
+      "<all_urls>"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+      "default_popup": "index.html"
+    }
+}
+  
