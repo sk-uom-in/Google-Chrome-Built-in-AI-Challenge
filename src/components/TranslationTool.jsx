@@ -77,6 +77,28 @@ const TranslationTool = () => {
     }
   };
 
+  const copyToClipboard = async (text) => {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('Copy failed:', err);
+        }
+        document.body.removeChild(textArea);
+      }
+    } catch (error) {
+      setError('Failed to copy text: ' + error.message);
+    }
+  };
+  
   return (
     <div className="translation-tool">
       {/* Top Controls */}
@@ -135,11 +157,15 @@ const TranslationTool = () => {
             {translatedText}
           </div>
           <button 
-            onClick={() => copyToClipboard(translatedText)}
-            className="button copy-button"
-          >
-            <CopyIcon /> Copy
-          </button>
+                onClick={() => {
+                    console.log('Copy button clicked');
+                    copyToClipboard(translatedText);
+                }}
+                className="button copy-button"
+                >
+                <CopyIcon /> Copy
+        </button>
+
         </div>
       )}
     </div>

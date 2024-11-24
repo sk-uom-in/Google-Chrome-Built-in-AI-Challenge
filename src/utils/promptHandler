@@ -1,0 +1,5 @@
+export async function showTranslationPrompt(text, targetLanguage) {
+  // Implement the prompt logic here
+  // For example, using a simple confirm dialog:
+  return window.confirm(`Translate the selected text to ${targetLanguage}?`);
+}
