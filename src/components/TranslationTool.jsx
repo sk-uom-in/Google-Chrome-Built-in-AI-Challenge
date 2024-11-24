@@ -19,6 +19,7 @@ const TranslationTool = () => {
   const [targetLanguage, setTargetLanguage] = useState('hi');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   const languages = {
     en: 'English',
@@ -98,9 +99,48 @@ const TranslationTool = () => {
       setError('Failed to copy text: ' + error.message);
     }
   };
+
+  const DarkModeIcon = ({ isDarkMode }) => (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      {isDarkMode ? (
+        <path d="M12 1v2M12 21v2M4.222 4.222l1.415 1.415M18.364 18.364l1.415 1.415M1 12h2M21 12h2M4.222 19.778l1.415-1.415M18.364 5.636l1.415-1.415M12 5a7 7 0 017 7 7 7 0 01-7 7 7 7 0 010-14z" />
+      ) : (
+        <path d="M17.293 17.293A8 8 0 016.707 6.707 8.004 8.004 0 0012 20a8.004 8.004 0 005.293-2.707z" />
+      )}
+    </svg>
+  );
+
+  const toggleTheme = () => {
+    const newTheme = isDarkMode ? 'light' : 'dark';
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.setAttribute('data-theme', newTheme);
+  };
   
+  const ThemeToggleButton = ({ isDarkMode, toggleTheme }) => (
+    <button
+      onClick={toggleTheme}
+      className="theme-toggle"
+      aria-label={`Switch to ${isDarkMode ? 'Dark' : 'Light'} mode`}
+    >
+      {isDarkMode ? 'Light' : 'Dark'}
+    </button>
+  );
+  
+  
+
   return (
     <div className="translation-tool">
+    
+        {/* Theme Toggle Button */}
+        <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
       {/* Top Controls */}
       <div className="controls">
         <button 

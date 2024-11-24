@@ -5,10 +5,39 @@
   box-sizing: border-box;
 }
 
+/* Define CSS Variables for Light Mode */
+:root {
+  --background-color: #ffffff;
+  --text-color: #1a1a1a;
+  --primary-color: #0066ff;
+  --secondary-color: #f0f0f0;
+  --border-color: #e0e0e0;
+  --error-color: #dc3545;
+  --success-color: #0ca678;
+  --input-background: #f8f9fa;
+  --output-background: white;
+}
+
+/* Dark Mode Variables */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-color: #1a1a1a;
+    --text-color: #ffffff;
+    --primary-color: #3399ff;
+    --secondary-color: #333333;
+    --border-color: #444444;
+    --error-color: #ff6b6b;
+    --success-color: #38d9a9;
+    --input-background: #2a2a2a;
+    --output-background: #333333;
+  }
+}
+
+/* Apply Variables */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: #ffffff;
-  color: #1a1a1a;
+  background-color: var(--background-color);
+  color: var(--text-color);
   width: 400px;
   min-height: 500px;
 }
@@ -21,10 +50,10 @@ body {
 h1 {
   font-size: 24px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-color);
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid var(--secondary-color);
 }
 
 .translation-tool {
@@ -56,25 +85,25 @@ h1 {
 }
 
 .button.primary {
-  background-color: #0066ff;
-  color: white;
+  background-color: var(--primary-color);
+  color: var(--text-color);
   box-shadow: 0 2px 4px rgba(0, 102, 255, 0.1);
 }
 
 .button.primary:hover {
-  background-color: #0052cc;
+  background-color: darken(var(--primary-color), 10%);
   transform: translateY(-1px);
 }
 
 /* Modern Select Dropdown */
 .language-select {
   padding: 10px;
-  border: 1.5px solid #e0e0e0;
+  border: 1.5px solid var(--border-color);
   border-radius: 8px;
-  background-color: white;
+  background-color: var(--input-background);
   min-width: 140px;
   font-size: 14px;
-  color: #1a1a1a;
+  color: var(--text-color);
   cursor: pointer;
   transition: all 0.2s ease;
   appearance: none;
@@ -85,7 +114,7 @@ h1 {
 }
 
 .language-select:focus {
-  border-color: #0066ff;
+  border-color: var(--primary-color);
   outline: none;
   box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
 }
@@ -94,25 +123,25 @@ h1 {
 .text-input {
   width: 100%;
   padding: 16px;
-  border: 1.5px solid #e0e0e0;
+  border: 1.5px solid var(--border-color);
   border-radius: 12px;
   resize: vertical;
   min-height: 120px;
   font-size: 14px;
   line-height: 1.5;
   transition: all 0.2s ease;
-  background-color: #f8f9fa;
+  background-color: var(--input-background);
 }
 
 .text-input:focus {
   outline: none;
-  border-color: #0066ff;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
 }
 
 /* Translate Button */
 .translate-button {
-  background-color: #0066ff;
+  background-color: var(--primary-color);
   color: white;
   width: 100%;
   padding: 12px;
@@ -123,22 +152,22 @@ h1 {
 }
 
 .translate-button:hover:not(:disabled) {
-  background-color: #0052cc;
+  background-color: darken(var(--primary-color), 10%);
   transform: translateY(-1px);
 }
 
 .translate-button:disabled {
-  background-color: #e0e0e0;
+  background-color: var(--secondary-color);
   cursor: not-allowed;
   transform: none;
 }
 
 /* Output Area */
 .output-area {
-  background-color: #f8f9fa;
+  background-color: var(--output-background);
   padding: 16px;
   border-radius: 12px;
-  border: 1.5px solid #e0e0e0;
+  border: 1.5px solid var(--border-color);
 }
 
 .output-header {
@@ -151,52 +180,52 @@ h1 {
 .output-header h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--text-color);
 }
 
 /* Copy Button */
 .copy-button {
-  background-color: #f0f0f0;
-  color: #1a1a1a;
+  background-color: var(--secondary-color);
+  color: var(--text-color);
   padding: 6px 12px;
   font-size: 13px;
   border-radius: 6px;
 }
 
 .copy-button:hover {
-  background-color: #e0e0e0;
+  background-color: lighten(var(--secondary-color), 10%);
 }
 
 /* Translated Text */
 .translated-text {
   font-size: 14px;
   line-height: 1.6;
-  color: #1a1a1a;
+  color: var(--text-color);
   padding: 12px;
-  background-color: white;
+  background-color: var(--output-background);
   border-radius: 8px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-color);
 }
 
 /* Error Message */
 .error-message {
-  color: #dc3545;
+  color: var(--error-color);
   padding: 12px;
   margin: 8px 0;
   border-radius: 8px;
-  background-color: #fff5f5;
-  border: 1px solid #ffebeb;
+  background-color: lighten(var(--error-color), 40%);
+  border: 1px solid lighten(var(--error-color), 20%);
   font-size: 14px;
 }
 
 /* Success Message */
 .success-message {
-  color: #0ca678;
+  color: var(--success-color);
   padding: 12px;
   margin: 8px 0;
   border-radius: 8px;
-  background-color: #f3faf7;
-  border: 1px solid #e6f6f0;
+  background-color: lighten(var(--success-color), 40%);
+  border: 1px solid lighten(var(--success-color), 20%);
   font-size: 14px;
 }
 
@@ -233,14 +262,115 @@ h1 {
 
 /* Clear Button */
 .clear-button {
-  background-color: #f0f0f0;
-  color: #666666;
+  background-color: var(--secondary-color);
+  color: var(--text-color);
   padding: 6px 12px;
   font-size: 13px;
   border-radius: 6px;
 }
 
 .clear-button:hover {
-  background-color: #e0e0e0;
-  color: #1a1a1a;
-} 
+  background-color: lighten(var(--secondary-color), 10%);
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background-color: var(--secondary-color);
+}
+
+.theme-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: var(--text-color);
+}
+
+/* Light Mode Variables */
+[data-theme="light"] {
+    --background-color: #ffffff; /* Pure white background for light mode */
+    --text-color: #333333; /* Darker text for good contrast */
+    --primary-color: #007bff; /* Subtle blue for primary actions */
+    --secondary-color: #f8f9fa; /* Very light gray for secondary elements */
+    --border-color: #e0e0e0; /* Soft gray for borders */
+    --error-color: #e63946; /* Bright red for errors */
+    --success-color: #2a9d8f; /* Calm green for success */
+    --input-background: #fdfdfd; /* Very light gray for inputs */
+    --output-background: #ffffff; /* Pure white for output areas */
+  }
+  
+  /* Light Mode Adjustments for Components */
+  body[data-theme="light"] {
+    color: var(--text-color);
+    background-color: var(--background-color);
+  }
+  
+  .translation-tool[data-theme="light"] {
+    background-color: var(--background-color);
+    color: var(--text-color);
+  }
+  
+  .button.primary {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+  }
+  
+  .button.primary:hover {
+    background-color: #0056b3; /* Slightly darker blue on hover */
+    transform: translateY(-1px);
+  }
+  
+  .text-input {
+    background-color: var(--input-background);
+    color: var(--text-color);
+    border: 1.5px solid var(--border-color);
+  }
+  
+  .text-input::placeholder {
+    color: #888888; /* Neutral placeholder text */
+  }
+  
+  .output-area {
+    background-color: var(--output-background);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+  }
+  
+  .copy-button {
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+  }
+  
+  .copy-button:hover {
+    background-color: #f1f1f1; /* Slightly darker for hover feedback */
+  }
+  
+  .theme-toggle {
+    background-color: var(--secondary-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  
+  .theme-toggle:hover {
+    background-color: #e0e0e0; /* Subtle gray hover effect */
+  }
+  
