@@ -10,6 +10,45 @@ async function checkTranslationAPI() {
   }
 }
 
+// Helper function to check AI capabilities
+async function checkAICapabilities() {
+  try {
+    const summarizerCapability = await ai.summarizer.capabilities();
+    const languageModelCapability = await ai.languageModel.capabilities();
+    
+    return {
+      canSummarize: summarizerCapability.available !== 'no',
+      canPrompt: languageModelCapability.available !== 'no'
+    };
+  } catch (error) {
+    console.error('AI Capabilities check failed:', error);
+    return { canSummarize: false, canPrompt: false };
+  }
+}
+
+// Initialize AI services
+let summarizer = null;
+let languageSession = null;
+
+async function initializeAIServices() {
+  const capabilities = await checkAICapabilities();
+  
+  if (capabilities.canSummarize) {
+    summarizer = await ai.summarizer.create();
+  }
+  
+  if (capabilities.canPrompt) {
+    languageSession = await ai.languageModel.create({
+      systemPrompt: "You are a helpful assistant that answers questions about text content clearly and concisely."
+    });
+  }
+}
+
+// Initialize on installation
+chrome.runtime.onInstalled.addListener(() => {
+  initializeAIServices();
+});
+
 // Message handler for translation requests
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'translate') {
@@ -44,7 +83,37 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     return true; // Keep message channel open for async response
   }
-  return true; // Add this line to handle all message types
+  else if (request.type === 'checkCapabilities') {
+    checkAICapabilities()
+      .then(capabilities => {
+        sendResponse(capabilities);
+      })
+      .catch(error => {
+        sendResponse({ canSummarize: false, canPrompt: false });
+      });
+    return true; // Indicates we will send response asynchronously
+  }
+  else if (request.type === 'summarize') {
+    handleSummarization(request.data.text)
+      .then(summary => {
+        sendResponse({ summary });
+      })
+      .catch(error => {
+        sendResponse({ error: error.message });
+      });
+    return true;
+  }
+  else if (request.type === 'prompt') {
+    handlePrompt(request.data.text, request.data.question)
+      .then(answer => {
+        sendResponse({ answer });
+      })
+      .catch(error => {
+        sendResponse({ error: error.message });
+      });
+    return true;
+  }
+  return true;
 });
 
 // Check API on installation

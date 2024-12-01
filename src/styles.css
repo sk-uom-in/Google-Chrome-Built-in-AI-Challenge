@@ -374,3 +374,23 @@ h1 {
     background-color: #e0e0e0; /* Subtle gray hover effect */
   }
   
+  .qa-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+  }
+  
+  .answer-area {
+    margin-top: 16px;
+    padding: 16px;
+    background-color: var(--output-background);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+  }
+  
+  .answer-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-color);
+  }
+  

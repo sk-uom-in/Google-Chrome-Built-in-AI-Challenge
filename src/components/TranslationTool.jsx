@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const CopyIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -20,6 +20,11 @@ const TranslationTool = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [pageText, setPageText] = useState('');
+  const [summary, setSummary] = useState('');
+  const [summarizer, setSummarizer] = useState(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const languages = {
     en: 'English',
@@ -134,53 +139,322 @@ const TranslationTool = () => {
     </button>
   );
   
-  
+  const getPageText = async () => {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const [{ result }] = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        function: () => {
+          const textElements = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, article, section, div');
+          return Array.from(textElements)
+            .filter(el => el.offsetParent !== null && el.textContent.trim())
+            .map(el => el.textContent.trim())
+            .join('\n');
+        },
+      });
+      setPageText(result);
+      return result;
+    } catch (error) {
+      setError('Failed to get page text: ' + error.message);
+    }
+  };
+
+  const handleSummarize = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const text = await getSelectedText();
+      if (!text.trim()) {
+        throw new Error('No content selected to summarize');
+      }
+
+      const response = await chrome.runtime.sendMessage({
+        type: 'summarize',
+        data: { text }
+      });
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      setSummary(response.summary);
+      setInputText(response.summary); // Set summary as input for translation
+    } catch (error) {
+      setError('Summarization failed: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAskQuestion = async () => {
+    if (!question.trim()) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'prompt',
+        data: { 
+          text: inputText,
+          question: question.trim()
+        }
+      });
+      
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      
+      setAnswer(response.answer);
+    } catch (error) {
+      setError('Failed to get answer: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initialize summarizer with correct type
+  useEffect(() => {
+    const initSummarizer = async () => {
+      try {
+        console.log('Initializing summarizer...');
+        const canSummarize = await ai.summarizer.capabilities();
+        
+        if (canSummarize && canSummarize.available !== 'no') {
+          const newSummarizer = await ai.summarizer.create({
+            type: 'key-points',        // Valid enum value: 'key-points'
+            format: 'markdown',
+            length: 'medium',          // Use medium length
+            maxWords: 200,             // Max words
+            minWords: 150              // Min words
+          });
+          setSummarizer(newSummarizer);
+          setIsInitialized(true);
+          console.log('Summarizer initialized successfully');
+        } else {
+          throw new Error('Summarizer not available');
+        }
+      } catch (error) {
+        console.error('Summarizer initialization error:', error);
+        setError('Failed to initialize summarizer: ' + error.message);
+        setIsInitialized(false);
+      }
+    };
+
+    initSummarizer();
+
+    return () => {
+      if (summarizer) {
+        summarizer.destroy();
+      }
+    };
+  }, []);
+
+  const handleGetAndSummarizeText = async () => {
+    if (!isInitialized || !summarizer) {
+      setError('Please wait for summarizer to initialize...');
+      return;
+    }
+
+    setIsSummarizing(true);
+    setError(null);
+    
+    try {
+      const [tab] = await chrome.tabs.query({ 
+        active: true, 
+        currentWindow: true 
+      });
+
+      if (!tab?.id) {
+        throw new Error('No active tab found');
+      }
+
+      // First, get element counts
+      const debugResults = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          return {
+            pCount: document.getElementsByTagName('p').length,
+            h1Count: document.getElementsByTagName('h1').length,
+            h2Count: document.getElementsByTagName('h2').length,
+            articleCount: document.getElementsByTagName('article').length
+          };
+        }
+      });
+
+      console.log('Element counts:', debugResults[0].result);
+
+      // Then, get the actual text
+      const textResults = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          // Get all paragraphs
+          const paragraphs = Array.from(document.getElementsByTagName('p'));
+          let text = '';
+
+          // Extract text from paragraphs
+          paragraphs.forEach(p => {
+            const content = p.textContent.trim();
+            if (content) {
+              text += content + '\n\n';
+            }
+          });
+
+          // If no paragraph text, try getting text from articles
+          if (!text.trim()) {
+            const articles = Array.from(document.getElementsByTagName('article'));
+            articles.forEach(article => {
+              const content = article.textContent.trim();
+              if (content) {
+                text += content + '\n\n';
+              }
+            });
+          }
+
+          // If still no text, try getting from divs with substantial content
+          if (!text.trim()) {
+            const divs = Array.from(document.getElementsByTagName('div'));
+            divs.forEach(div => {
+              const content = div.textContent.trim();
+              if (content && content.length > 100) { // Only get divs with substantial content
+                text += content + '\n\n';
+              }
+            });
+          }
+
+          return text.trim();
+        }
+      });
+
+      console.log('Text extraction result length:', textResults[0].result?.length);
+
+      if (!textResults[0].result) {
+        throw new Error(`No text content found. Elements found: ${JSON.stringify(debugResults[0].result)}`);
+      }
+
+      const pageContent = textResults[0].result;
+
+      // Log a preview of the content
+      console.log('Content preview:', pageContent.substring(0, 200));
+
+      // Proceed with summarization
+      console.log('Starting summarization...');
+      const summaryResult = await summarizer.summarize(pageContent);
+      console.log('Summary created:', summaryResult);
+      setSummary(summaryResult);
+      
+      // Automatically set the summary as input text
+      setInputText(summaryResult);
+
+    } catch (error) {
+      console.error('Full error details:', error);
+      setError('Failed to get and summarize text: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
+  // Function to format any markdown text (for both summary and translation)
+  const formatMarkdownText = (text) => {
+    if (!text) return null;
+
+    // Split text into lines and process each
+    const lines = text.split('\n').filter(line => line.trim());
+    let currentList = [];
+    const elements = [];
+
+    lines.forEach((line, index) => {
+      const cleanLine = line.replace(/\*\*/g, '').trim(); // Remove ** markers
+
+      // Check if it's a list item
+      if (cleanLine.startsWith('*')) {
+        currentList.push(cleanLine.substring(1).trim());
+      } else {
+        // If we have a list waiting to be rendered
+        if (currentList.length > 0) {
+          elements.push(
+            <ul key={`list-${index}`} className="formatted-list">
+              {currentList.map((item, i) => (
+                <li key={i}>{item}</li>
+              ))}
+            </ul>
+          );
+          currentList = [];
+        }
+
+        // Regular paragraph
+        if (cleanLine) {
+          elements.push(
+            <p key={`p-${index}`} className="formatted-paragraph">
+              {cleanLine}
+            </p>
+          );
+        }
+      }
+    });
+
+    // Add any remaining list items
+    if (currentList.length > 0) {
+      elements.push(
+        <ul key="list-final" className="formatted-list">
+          {currentList.map((item, i) => (
+            <li key={i}>{item}</li>
+          ))}
+        </ul>
+      );
+    }
+
+    return elements;
+  };
 
   return (
     <div className="translation-tool">
-    
-        {/* Theme Toggle Button */}
-        <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
-      {/* Top Controls */}
-      <div className="controls">
-        <button 
-          onClick={getSelectedText}
-          className="button primary"
-        >
-          <SelectIcon /> Get Selected Text
-        </button>
-        <select 
-          value={targetLanguage}
-          onChange={(e) => setTargetLanguage(e.target.value)}
-          className="language-select"
-        >
-          {Object.entries(languages).map(([code, name]) => (
-            <option key={code} value={code}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Input Area */}
-      <div className="input-area">
-        <textarea
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="Enter or paste text to translate..."
-          className="text-input"
-          rows={4}
-        />
-      </div>
-
-      {/* Translate Button */}
+      <ThemeToggleButton isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+      
       <button 
-        onClick={handleTranslate}
-        disabled={isLoading || !inputText.trim()}
-        className="button translate-button"
+        onClick={handleGetAndSummarizeText}
+        className="button primary get-text-btn"
+        disabled={isSummarizing || !isInitialized}
       >
-        {isLoading ? 'Translating...' : 'Translate'}
+        {!isInitialized ? 'Initializing...' : 
+         isSummarizing ? 'Summarizing...' : 
+         'Get & Summarize Page Text'}
       </button>
+
+      {/* Summary Section */}
+      {summary && (
+        <div className="summary-section">
+          <h2>Summary</h2>
+          <div className="summary-content">
+            {formatMarkdownText(summary)}
+          </div>
+        </div>
+      )}
+
+      {/* Translation Controls - Updated Layout */}
+      {summary && (
+        <div className="translation-row" style={{ display: 'flex', flexDirection: 'row', gap: '10px' }}>
+          <select 
+            value={targetLanguage}
+            onChange={(e) => setTargetLanguage(e.target.value)}
+            className="language-select"
+            style={{ flex: '1' }}
+          >
+            {Object.entries(languages).map(([code, name]) => (
+              <option key={code} value={code}>
+                {name}
+              </option>
+            ))}
+          </select>
+          
+          <button 
+            onClick={handleTranslate}
+            disabled={isLoading || !inputText.trim()}
+            className="button translate-button"
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            {isLoading ? 'Translating...' : 'Translate'}
+          </button>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (
@@ -189,23 +463,19 @@ const TranslationTool = () => {
         </div>
       )}
 
-      {/* Output Area */}
+      {/* Translation Output */}
       {translatedText && (
         <div className="output-area">
           <h3>Translation:</h3>
-          <div className="translated-text">
-            {translatedText}
+          <div className="formatted-content">
+            {formatMarkdownText(translatedText)}
           </div>
           <button 
-                onClick={() => {
-                    console.log('Copy button clicked');
-                    copyToClipboard(translatedText);
-                }}
-                className="button copy-button"
-                >
-                <CopyIcon /> Copy
-        </button>
-
+            onClick={() => copyToClipboard(translatedText)}
+            className="button copy-button"
+          >
+            Copy
+          </button>
         </div>
       )}
     </div>

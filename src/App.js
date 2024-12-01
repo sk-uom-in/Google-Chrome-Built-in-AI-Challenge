@@ -6,7 +6,7 @@ function App() {
   console.log('App is rendering');
   return (
     <div className="app-container">
-      <h1>Research Translator</h1>
+      <h1>Research Helper</h1>
       <TranslationTool />
     </div>
   );

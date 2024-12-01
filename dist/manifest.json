@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "Research Translator",
+    "name": "Research Helper",
     "version": "1.0",
-    "description": "Translation tool for research",
+    "description": "Translation, summarization, and Q&A tool for research",
     "permissions": [
       "activeTab",
       "scripting",
@@ -10,6 +10,8 @@
     ],
     "host_permissions": [
       "https://translate.googleapis.com/*",
+      "https://summarize.googleapis.com/*",
+      "https://prompt.googleapis.com/*",
       "<all_urls>"
     ],
     "background": {
